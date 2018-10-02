@@ -57,7 +57,7 @@ public final class SolarHijrahDate
         extends ChronoDateImpl<SolarHijrahDate>
         implements Serializable {
 
-    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(622, 03, 22);
+    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(622, 03, 22).minusYears(1);
 
     /**
      * Serialization version.
@@ -98,11 +98,12 @@ public final class SolarHijrahDate
      * The days passed from 01-01-01 Solar Date
      */
     private long solarEpochDays;
+    private long dayOfYear;
 
     //-----------------------------------------------------------------------
 
     /**
-     * Obtains the current {@code ThaiBuddhistDate} from the system clock in the default time-zone.
+     * Obtains the current {@code SolarHijrahDate} from the system clock in the default time-zone.
      * <p>
      * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current date.
@@ -117,7 +118,7 @@ public final class SolarHijrahDate
     }
 
     /**
-     * Obtains the current {@code ThaiBuddhistDate} from the system clock in the specified time-zone.
+     * Obtains the current {@code SolarHijrahDate} from the system clock in the specified time-zone.
      * <p>
      * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current date.
      * Specifying the time-zone avoids dependence on the default time-zone.
@@ -133,7 +134,7 @@ public final class SolarHijrahDate
     }
 
     /**
-     * Obtains the current {@code ThaiBuddhistDate} from the specified clock.
+     * Obtains the current {@code SolarHijrahDate} from the specified clock.
      * <p>
      * This will query the specified clock to obtain the current date - today.
      * Using this method allows the use of an alternate clock for testing.
@@ -148,10 +149,10 @@ public final class SolarHijrahDate
     }
 
     /**
-     * Obtains a {@code ThaiBuddhistDate} representing a date in the Thai Buddhist calendar
+     * Obtains a {@code SolarHijrahDate} representing a date in the Thai Buddhist calendar
      * system from the proleptic-year, month-of-year and day-of-month fields.
      * <p>
-     * This returns a {@code ThaiBuddhistDate} with the specified fields.
+     * This returns a {@code SolarHijrahDate} with the specified fields.
      * The day must be valid for the year and month, otherwise an exception will be thrown.
      *
      * @param prolepticYear the Thai Buddhist proleptic-year
@@ -166,21 +167,21 @@ public final class SolarHijrahDate
     }
 
     /**
-     * Obtains a {@code ThaiBuddhistDate} from a temporal object.
+     * Obtains a {@code SolarHijrahDate} from a temporal object.
      * <p>
      * This obtains a date in the Thai Buddhist calendar system based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
-     * which this factory converts to an instance of {@code ThaiBuddhistDate}.
+     * which this factory converts to an instance of {@code SolarHijrahDate}.
      * <p>
      * The conversion typically uses the {@link ChronoField#EPOCH_DAY EPOCH_DAY}
      * field, which is standardized across calendar systems.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used as a query via method reference, {@code ThaiBuddhistDate::from}.
+     * allowing it to be used as a query via method reference, {@code SolarHijrahDate::from}.
      *
      * @param temporal the temporal object to convert, not null
      * @return the date in Thai Buddhist calendar system, not null
-     * @throws DateTimeException if unable to convert to a {@code ThaiBuddhistDate}
+     * @throws DateTimeException if unable to convert to a {@code SolarHijrahDate}
      */
     public static SolarHijrahDate from(TemporalAccessor temporal) {
         return SolarHijrahChronology.INSTANCE.date(temporal);
@@ -204,16 +205,23 @@ public final class SolarHijrahDate
         long epochDay = date.toEpochDay();
         long solarStart = SOLAR_HIJRAH_START_DATE.toEpochDay();
         solarEpochDays = epochDay - solarStart;
-        year = (int) (solarEpochDays / 365);
-        int leapYearsCount = leapYears.leapYearsTo(year - 1);
-        year += leapYearsCount / 365; // this will ensure that division by 365 for years will be accurate even if years that have one extra day (leap years) are more than 365
-        long dayOfYear = solarEpochDays - year * 365 - leapYearsCount;
+        int yearEst = (int) (solarEpochDays / 365);
+        int leapYearsCount = leapYears.leapYearsTo(yearEst - 1);
+        yearEst = (int) ((solarEpochDays - leapYearsCount) / 365);
+        leapYearsCount = leapYears.leapYearsTo(yearEst - 1);
+        yearEst += leapYearsCount / 365; // this will ensure that division by 365 for years will be accurate even if years that have one extra day (leap years) are more than 365
+        year = yearEst;
+        dayOfYear = solarEpochDays - year * 365 - leapYearsCount;
+        if (dayOfYear >= 365 && leapYears.isLeapYear(year)) {
+            year++;
+            dayOfYear -= 365;
+        }
         if (dayOfYear <= 31 * 6) {
-            month = (int) (dayOfYear / 31);
-            day = (int) (dayOfYear - (month - 1) * 31);
+            month = (int) ((dayOfYear) / 31) + 1;
+            day = (int) (dayOfYear + (month > 1 ? 2 : 1) - (month - 1) * 31);
         } else {
-            month = (int) ((dayOfYear - 186) / 30) + 1;
-            day = (int) (dayOfYear - 186 - (month - 7) * 30);
+            month = (int) ((dayOfYear - 31 * 6) / 30) + 7;
+            day = (int) (dayOfYear + (month > 7 ? 2 : 1) - 31 * 6 - (month - 7) * 30);
         }
     }
 
@@ -295,6 +303,8 @@ public final class SolarHijrahDate
                     return day;
                 case MONTH_OF_YEAR:
                     return month;
+                case DAY_OF_YEAR:
+                    return dayOfYear;
             }
             return isoDate.getLong(field);
         }
@@ -381,6 +391,22 @@ public final class SolarHijrahDate
         return with(isoDate.plusDays(days));
     }
 
+    public int getYear() {
+        return year;
+    }
+
+    public int getMonth() {
+        return month;
+    }
+
+    public int getDay() {
+        return day;
+    }
+
+    public long getDayOfYear() {
+        return dayOfYear;
+    }
+
     private SolarHijrahDate with(LocalDate newDate) {
         return (newDate.equals(isoDate) ? this : new SolarHijrahDate(newDate));
     }
@@ -426,7 +452,6 @@ public final class SolarHijrahDate
     }
 
     void writeExternal(DataOutput out) throws IOException {
-        // MinguoChrono is implicit in the THAIBUDDHIST_DATE_TYPE
         out.writeInt(this.get(YEAR));
         out.writeByte(this.get(MONTH_OF_YEAR));
         out.writeByte(this.get(DAY_OF_MONTH));
