@@ -40,15 +40,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static org.threeten.bp.chrono.ThaiBuddhistChronology.YEARS_DIFFERENCE;
 import static org.threeten.bp.temporal.ChronoField.*;
 
 /**
  * A date in the Solar Hijrah calendar system.
  * <p>
  * This date operates using the {@linkplain SolarHijrahChronology Solar Hijrah calendar}.
- * This calendar system is primarily used in I.R. Iran.
- * Dates are aligned such that {@code 01-01-01 (Buddhist)} is {@code 622-03-22 (ISO)}.
+ * This calendar system is primarily used in I.R. Iran and Afghanistan.
+ * Dates are aligned such that {@code 01-01-01 (Solar Hijrah)} is {@code 622-03-22 (ISO)}.
  *
  * <h3>Specification for implementors</h3>
  * This class is immutable and thread-safe.
@@ -149,16 +148,16 @@ public final class SolarHijrahDate
     }
 
     /**
-     * Obtains a {@code SolarHijrahDate} representing a date in the Thai Buddhist calendar
+     * Obtains a {@code SolarHijrahDate} representing a date in the Solar Hijrah calendar
      * system from the proleptic-year, month-of-year and day-of-month fields.
      * <p>
      * This returns a {@code SolarHijrahDate} with the specified fields.
      * The day must be valid for the year and month, otherwise an exception will be thrown.
      *
-     * @param prolepticYear the Thai Buddhist proleptic-year
-     * @param month         the Thai Buddhist month-of-year, from 1 to 12
-     * @param dayOfMonth    the Thai Buddhist day-of-month, from 1 to 31
-     * @return the date in Thai Buddhist calendar system, not null
+     * @param prolepticYear the Gregorian proleptic-year
+     * @param month         the Gregorian month-of-year, from 1 to 12
+     * @param dayOfMonth    the Gregorian day-of-month, from 1 to 31
+     * @return the date in Solar Hijrah calendar system, not null
      * @throws DateTimeException if the value of any field is out of range,
      *                           or if the day-of-month is invalid for the month-year
      */
@@ -169,7 +168,7 @@ public final class SolarHijrahDate
     /**
      * Obtains a {@code SolarHijrahDate} from a temporal object.
      * <p>
-     * This obtains a date in the Thai Buddhist calendar system based on the specified temporal.
+     * This obtains a date in the Solar Hijrah calendar system based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code SolarHijrahDate}.
      * <p>
@@ -180,7 +179,7 @@ public final class SolarHijrahDate
      * allowing it to be used as a query via method reference, {@code SolarHijrahDate::from}.
      *
      * @param temporal the temporal object to convert, not null
-     * @return the date in Thai Buddhist calendar system, not null
+     * @return the date in Solar Hijrah calendar system, not null
      * @throws DateTimeException if unable to convert to a {@code SolarHijrahDate}
      */
     public static SolarHijrahDate from(TemporalAccessor temporal) {
@@ -271,7 +270,7 @@ public final class SolarHijrahDate
                         return isoDate.range(field);
                     case YEAR_OF_ERA: {
                         ValueRange range = YEAR.range();
-                        long max = (getProlepticYear() <= 0 ? -(range.getMinimum() + YEARS_DIFFERENCE) + 1 : range.getMaximum() + YEARS_DIFFERENCE);
+                        long max = (getProlepticYear() <= 0 ? -(range.getMinimum()) + 1 : range.getMaximum());
                         return ValueRange.of(1, max);
                     }
                 }
