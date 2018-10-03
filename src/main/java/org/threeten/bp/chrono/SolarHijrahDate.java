@@ -56,7 +56,7 @@ public final class SolarHijrahDate
         extends ChronoDateImpl<SolarHijrahDate>
         implements Serializable {
 
-    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(622, 03, 22).minusYears(1);
+    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(622, 3, 22).minusYears(1);
 
     /**
      * Serialization version.
