@@ -67,13 +67,14 @@ public enum SolarHijrahEra implements Era {
     AH;
 
     //-----------------------------------------------------------------------
+
     /**
      * Obtains an instance of {@code SolarHijrahEra} from a value.
      * <p>
      * The current era (from ISO year 622 onwards) has the value 1
      * The previous era has the value 0.
      *
-     * @param solarHijrahEra  the era to represent, from 0 to 1
+     * @param solarHijrahEra the era to represent, from 0 to 1
      * @return the SolarHijrah singleton, never null
      * @throws IllegalCalendarFieldValueException if the era is invalid
      */
@@ -89,6 +90,7 @@ public enum SolarHijrahEra implements Era {
     }
 
     //-----------------------------------------------------------------------
+
     /**
      * Gets the era numeric value.
      * <p>

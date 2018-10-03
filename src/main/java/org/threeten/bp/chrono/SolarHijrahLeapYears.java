@@ -31,10 +31,8 @@
  */
 package org.threeten.bp.chrono;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This class stores Solar Hijrah leap years.
@@ -81,7 +79,6 @@ public class SolarHijrahLeapYears {
         }
         return 0;
     }
-
 
 
 }
