@@ -85,7 +85,7 @@ public enum SolarHijrahEra implements Era {
             case 1:
                 return AH;
             default:
-                throw new DateTimeException("Era is not valid for ThaiBuddhistEra");
+                throw new DateTimeException("Era is not valid for SolarHijrahEra");
         }
     }
 
