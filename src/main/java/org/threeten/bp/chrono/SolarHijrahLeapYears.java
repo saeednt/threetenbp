@@ -68,6 +68,7 @@ public class SolarHijrahLeapYears {
         return years.contains(year);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public int leapYearsTo(int year) {
         int mYear = year;
         while (mYear > 0) {
