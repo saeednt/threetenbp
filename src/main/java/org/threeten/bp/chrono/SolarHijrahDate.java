@@ -56,7 +56,7 @@ public final class SolarHijrahDate
         extends ChronoDateImpl<SolarHijrahDate>
         implements Serializable {
 
-    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(622, 3, 22).minusYears(1);
+    public static final LocalDate SOLAR_HIJRAH_START_DATE = LocalDate.of(621, 3, 22);
 
     /**
      * Serialization version.
@@ -97,7 +97,7 @@ public final class SolarHijrahDate
      * The days passed from 01-01-01 Solar Date
      */
     private long solarEpochDays;
-    private long dayOfYear;
+    private long daysPassedFromBeginngOfYear;
 
     //-----------------------------------------------------------------------
 
@@ -186,6 +186,43 @@ public final class SolarHijrahDate
         return SolarHijrahChronology.INSTANCE.date(temporal);
     }
 
+    /**
+     * Obtains a {@code SolarHijrahDate} from the exat date in Solar Hijrah Calendar system
+     * <p>
+     * This obtains the date in Solar Hijrah format and converts it to store the Iso date
+     * as well.
+     *
+     * @param solarHijrahYear the year in solar hijrah calendar
+     * @param month           the month of year
+     * @param dayOfMonth      the day of month
+     * @return the date in Solar Hijrah format
+     */
+    public static SolarHijrahDate ofSolar(int solarHijrahYear, int month, int dayOfMonth) {
+        if (dayOfMonth > 31) {
+            throw new DateTimeException("No month has more than 31 days");
+        }
+        if (month > 6 && month < 12 && dayOfMonth > 30) {
+            throw new DateTimeException("Day of month cannot be greater than 30 for months after Shahrivar");
+        }
+        if (month == 12 && dayOfMonth > 29 && !SolarHijrahLeapYears.getInstance().isLeapYear(solarHijrahYear)) {
+            throw new DateTimeException("Esfand cannot have more than 29 days in years that are not leap years");
+        }
+
+        int leapYearsCount = SolarHijrahLeapYears.getInstance().leapYearsTo(solarHijrahYear - 1);
+        long epochDays = (solarHijrahYear) * 365 + leapYearsCount;
+        int monthDays = 0;
+        if (month > 6) {
+            monthDays += 31 * 6 - 1;
+            month -= 6;
+            monthDays += (month - 1) * 30;
+        } else {
+            monthDays += (month - 1) * 31 - 1;
+        }
+        epochDays += monthDays + dayOfMonth - 1;
+        epochDays += SOLAR_HIJRAH_START_DATE.toEpochDay();
+        return new SolarHijrahDate(LocalDate.ofEpochDay(epochDays));
+    }
+
     //-----------------------------------------------------------------------
 
     /**
@@ -204,23 +241,27 @@ public final class SolarHijrahDate
         long epochDay = date.toEpochDay();
         long solarStart = SOLAR_HIJRAH_START_DATE.toEpochDay();
         solarEpochDays = epochDay - solarStart;
-        int yearEst = (int) (solarEpochDays / 365);
-        int leapYearsCount = leapYears.leapYearsTo(yearEst - 1);
-        yearEst = (int) ((solarEpochDays - leapYearsCount) / 365);
-        leapYearsCount = leapYears.leapYearsTo(yearEst - 1);
-        yearEst += leapYearsCount / 365; // this will ensure that division by 365 for years will be accurate even if years that have one extra day (leap years) are more than 365
-        year = yearEst;
-        dayOfYear = solarEpochDays - year * 365 - leapYearsCount;
-        if (dayOfYear >= 365 && leapYears.isLeapYear(year)) {
-            year++;
-            dayOfYear -= 365;
+        int yearEstimate = (int) (solarEpochDays / 365);
+        int leapYearsCountUntilToday = leapYears.leapYearsTo(yearEstimate - 1);
+        yearEstimate = (int) ((solarEpochDays - leapYearsCountUntilToday) / 365);
+        leapYearsCountUntilToday = leapYears.leapYearsTo(yearEstimate - 1);
+        yearEstimate += leapYearsCountUntilToday / 365; // this will ensure that division by 365 for years will be accurate even if years that have one extra day (leap years) are more than 365
+        daysPassedFromBeginngOfYear = solarEpochDays - yearEstimate * 365 - leapYearsCountUntilToday + 1;
+        if (daysPassedFromBeginngOfYear == 365 && !leapYears.isLeapYear(yearEstimate)) {
+            yearEstimate++;
+            daysPassedFromBeginngOfYear = 0;
         }
-        if (dayOfYear <= 31 * 6) {
-            month = (int) ((dayOfYear) / 31) + 1;
-            day = (int) (dayOfYear + (month > 1 ? 2 : 1) - (month - 1) * 31);
+        if (daysPassedFromBeginngOfYear == 366 && leapYears.isLeapYear(yearEstimate)) {
+            yearEstimate++;
+            daysPassedFromBeginngOfYear = 0;
+        }
+        year = yearEstimate;
+        if (daysPassedFromBeginngOfYear <= 31 * 6 - 1) {
+            month = (int) ((daysPassedFromBeginngOfYear) / 31) + 1;
+            day = (int) (daysPassedFromBeginngOfYear - (month - 1) * 31 + 1);
         } else {
-            month = (int) ((dayOfYear - 31 * 6) / 30) + 7;
-            day = (int) (dayOfYear + (month > 7 ? 2 : 1) - 31 * 6 - (month - 7) * 30);
+            month = (int) ((daysPassedFromBeginngOfYear - 31 * 6) / 30) + 7;
+            day = (int) (daysPassedFromBeginngOfYear - 31 * 6 - (month - 7) * 30 + 1);
         }
     }
 
@@ -303,7 +344,7 @@ public final class SolarHijrahDate
                 case MONTH_OF_YEAR:
                     return month;
                 case DAY_OF_YEAR:
-                    return dayOfYear;
+                    return daysPassedFromBeginngOfYear + 1;
             }
             return isoDate.getLong(field);
         }
@@ -348,6 +389,8 @@ public final class SolarHijrahDate
                             return with(isoDate.withYear((1 - getProlepticYear())));
                     }
                 }
+                case DAY_OF_MONTH:
+                    return ofSolar(year, month, (int) newValue);
             }
             return with(isoDate.with(field, newValue));
         }
@@ -390,6 +433,15 @@ public final class SolarHijrahDate
         return with(isoDate.plusDays(days));
     }
 
+    @Override
+    ChronoDateImpl<SolarHijrahDate> minusDays(long daysToSubtract) {
+        return with(isoDate.minusDays(daysToSubtract));
+    }
+
+    public LocalDate getLocalDate() {
+        return isoDate;
+    }
+
     public int getYear() {
         return year;
     }
@@ -403,7 +455,7 @@ public final class SolarHijrahDate
     }
 
     public long getDayOfYear() {
-        return dayOfYear;
+        return daysPassedFromBeginngOfYear + 1;
     }
 
     private SolarHijrahDate with(LocalDate newDate) {
