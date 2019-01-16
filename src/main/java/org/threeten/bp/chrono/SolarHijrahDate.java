@@ -419,23 +419,51 @@ public final class SolarHijrahDate
 
     //-----------------------------------------------------------------------
     @Override
-    SolarHijrahDate plusYears(long years) {
+    public SolarHijrahDate plusYears(long years) {
         return with(isoDate.plusYears(years));
     }
 
     @Override
-    SolarHijrahDate plusMonths(long months) {
-        return with(isoDate.plusMonths(months));
+    public SolarHijrahDate plusMonths(long months) {
+        if (months == 0)
+            return this;
+        long monthCount = year * 12 + (month - 1);
+        long calcMonths = monthCount + months;
+        int newYear = YEAR.checkValidIntValue(Jdk8Methods.floorDiv(calcMonths, 12));
+        int newMonth = Jdk8Methods.floorMod(calcMonths, 12) + 1;
+        return resolvePreviousValid(newYear, newMonth, day);
     }
 
     @Override
-    SolarHijrahDate plusDays(long days) {
+    public SolarHijrahDate plusDays(long days) {
         return with(isoDate.plusDays(days));
     }
 
     @Override
     ChronoDateImpl<SolarHijrahDate> minusDays(long daysToSubtract) {
         return with(isoDate.minusDays(daysToSubtract));
+    }
+
+    /**
+     * Resolves the date, resolving days past the end of month.
+     *
+     * @param year  the year to represent, validated from MIN_YEAR to MAX_YEAR
+     * @param month  the month-of-year to represent, validated from 1 to 12
+     * @param day  the day-of-month to represent, validated from 1 to 31
+     * @return the resolved date, not null
+     */
+    private SolarHijrahDate resolvePreviousValid(int year, int month, int day) {
+        switch (month){
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+                day = Math.min(day, 30);
+            case 12:
+                day = Math.min(day, leapYears.isLeapYear(year)?30:29);
+        }
+        return SolarHijrahDate.ofSolar(year, month, day);
     }
 
     public LocalDate getLocalDate() {
@@ -476,7 +504,7 @@ public final class SolarHijrahDate
 
     @Override  // override for performance
     public long toEpochDay() {
-        return solarEpochDays;
+        return isoDate.toEpochDay();
     }
 
     //-------------------------------------------------------------------------

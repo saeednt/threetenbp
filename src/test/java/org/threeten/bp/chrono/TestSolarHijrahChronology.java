@@ -6,6 +6,7 @@ import org.testng.annotations.Test;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.temporal.ChronoField;
+import org.threeten.bp.temporal.ChronoUnit;
 
 @Test
 public class TestSolarHijrahChronology {
@@ -234,5 +235,14 @@ public class TestSolarHijrahChronology {
         ChronoDateImpl<SolarHijrahDate> years = of.minusYears(200);
         ChronoDateImpl<SolarHijrahDate> date = years.minusDays(13);
         Assert.assertEquals(date.get(ChronoField.DAY_OF_MONTH) < 31, true);
+    }
+
+    @Test
+    public void test_plus_month(){
+        SolarHijrahDate date = SolarHijrahDate.ofSolar(1197, 1, 1);
+        SolarHijrahDate plus = date.plusMonths(2409);
+        Assert.assertEquals(plus.getMonth(), 10);
+        Assert.assertEquals(plus.getDay(), 1);
+
     }
 }
